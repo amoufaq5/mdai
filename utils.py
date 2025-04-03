@@ -4,20 +4,25 @@ import logging
 
 def load_data(file_paths, column_mapping):
     """
-    Load CSV and JSON files from provided file paths,
+    Load CSV, JSON, and Excel files from provided file paths,
     normalize column names based on the mapping, and return a unified DataFrame.
     """
     dfs = []
     for file in file_paths:
-        if file.endswith('.csv'):
-            df = pd.read_csv(file)
-        elif file.endswith('.json'):
-            df = pd.read_json(file)
-        else:
-            logging.warning(f"Unsupported file format: {file}")
-            continue
-        df = normalize_columns(df, column_mapping)
-        dfs.append(df)
+        try:
+            if file.endswith('.csv'):
+                df = pd.read_csv(file)
+            elif file.endswith('.json'):
+                df = pd.read_json(file)
+            elif file.endswith('.xls') or file.endswith('.xlsx'):
+                df = pd.read_excel(file)
+            else:
+                logging.warning(f"Unsupported file format: {file}")
+                continue
+            df = normalize_columns(df, column_mapping)
+            dfs.append(df)
+        except Exception as e:
+            logging.error(f"Error loading file {file}: {e}")
     if dfs:
         data = pd.concat(dfs, ignore_index=True)
         return data
