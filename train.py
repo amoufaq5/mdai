@@ -1,37 +1,62 @@
+import os
+import logging
 import tensorflow as tf
 import numpy as np
 from model import create_multimodal_model
 from data_preprocessing import preprocess_data
-import os
 
 def load_training_data():
     """
-    Loads and preprocesses training data from manually added CSV/JSON files.
-    For demonstration purposes, this function creates dummy data.
-    
-    In practice, replace the dummy data creation with real data extraction from the DataFrame.
+    Loads and preprocesses all CSV, JSON, Excel (.xls/.xlsx) files in the 'data/' folder.
+    Returns tokenized text data, image data, numerical data, and labels (dummy for now).
     """
-    # Example file paths – adjust to match your data folder and file names.
-    file_paths = ['data/drug_data.csv', 'data/symptom_data.json']
-    data = preprocess_data(file_paths)
-    num_samples = len(data)
-    
-    # Dummy tokenized text: each sample is a sequence of 100 token IDs.
-    text_data = np.random.randint(1, 5000, (num_samples, 100))
-    # Dummy image data: random images of shape (224, 224, 3)
-    image_data = np.random.random((num_samples, 224, 224, 3))
-    # Dummy numerical data: e.g., 10 features per sample
-    numerical_data = np.random.random((num_samples, 10))
-    # Dummy labels: one-hot encoded for 3 classes
-    labels = tf.keras.utils.to_categorical(np.random.randint(0, 3, num_samples), num_classes=3)
-    return (text_data, image_data, numerical_data, labels)
+    data_dir = 'data'
+    # Gather all files in 'data/' folder that match CSV, JSON, XLS, XLSX
+    file_paths = []
+    for file_name in os.listdir(data_dir):
+        if file_name.lower().endswith(('.csv', '.json', '.xls', '.xlsx')):
+            file_paths.append(os.path.join(data_dir, file_name))
+
+    # Preprocess to get unified DataFrame (could be empty if no valid files exist or they're empty)
+    df = preprocess_data(file_paths)
+    num_samples = len(df)
+
+    if num_samples == 0:
+        logging.warning("No data found or data folder is empty. Using dummy data for demonstration.")
+        num_samples = 10
+        text_data = np.random.randint(1, 5000, (num_samples, 100))
+        image_data = np.random.random((num_samples, 224, 224, 3))
+        numerical_data = np.random.random((num_samples, 10))
+        labels = tf.keras.utils.to_categorical(np.random.randint(0, 3, num_samples), num_classes=3)
+    else:
+        logging.info(f"Loaded {num_samples} samples from data folder.")
+        
+        # -------------------------------------------------------------------
+        # You can replace the dummy array creation below with real logic
+        # to convert your DataFrame `df` into numeric arrays for training.
+        # For example, if `df` has a column 'text_input', you’d tokenize it.
+        # If you have columns for images, you'd load them from paths, etc.
+        # -------------------------------------------------------------------
+
+        # Dummy arrays for demonstration:
+        text_data = np.random.randint(1, 5000, (num_samples, 100))
+        image_data = np.random.random((num_samples, 224, 224, 3))
+        numerical_data = np.random.random((num_samples, 10))
+        labels = tf.keras.utils.to_categorical(np.random.randint(0, 3, num_samples), num_classes=3)
+
+    return text_data, image_data, numerical_data, labels
 
 def train():
-    # Load training data
+    # Load training data from 'data/' folder
     text_data, image_data, numerical_data, labels = load_training_data()
 
     # Create the multimodal model
-    model = create_multimodal_model(vocab_size=5000, max_length=100, image_shape=(224,224,3), num_features=10)
+    model = create_multimodal_model(
+        vocab_size=5000, 
+        max_length=100, 
+        image_shape=(224,224,3), 
+        num_features=10
+    )
 
     # Train the model
     model.fit(
